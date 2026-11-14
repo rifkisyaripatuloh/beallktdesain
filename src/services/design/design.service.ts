@@ -62,16 +62,37 @@ export async function updateDesign(id: string, body: unknown) {
   if (!idSchema.safeParse(id).success) return failure("ID desain tidak valid", 400);
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return validationFailure(parsed.error);
+
   const existing = await prisma.design.findFirst({ where: { id, userId } });
   if (!existing) return failure("Desain tidak ditemukan", 404);
-  const next = { type: parsed.data.type ?? existing.type, width: parsed.data.width ?? existing.width, height: parsed.data.height ?? existing.height };
-  const config = parsed.data.config ?? existing.config;
-  if (config) {
-    const valid = designConfigSchema.safeParse(config);
-    if (!valid.success) return validationFailure(valid.error);
-    if (valid.data.type !== next.type || valid.data.canvas.width !== next.width || valid.data.canvas.height !== next.height) return failure("Konfigurasi desain tidak cocok dengan ukuran atau tipe", 422);
-  }
-  const design = await prisma.design.update({ where: { id }, data: { ...parsed.data, config: parsed.data.config as Prisma.InputJsonValue | undefined } });
+
+  const update = parsed.data;
+  const width = update.width ?? existing.width;
+  const height = update.height ?? existing.height;
+  const type = update.type ?? existing.type;
+  const rawConfig = update.config ?? existing.config;
+  const validConfig = designConfigSchema.safeParse(rawConfig);
+  if (!validConfig.success) return validationFailure(validConfig.error);
+
+  // Saat preset ukuran diubah, FE mengirim width/height dan config.canvas baru.
+  // Samakan metadata serta config yang disimpan; jangan tolak hanya karena config.type tertinggal.
+  const config = structuredClone(validConfig.data);
+  config.type = type;
+  config.canvas.width = width;
+  config.canvas.height = height;
+  if (config.canvas.unit === undefined) config.canvas.unit = update.unit ?? existing.unit;
+
+  const design = await prisma.design.update({
+    where: { id },
+    data: {
+      ...(update.name !== undefined ? { name: update.name } : {}),
+      type,
+      width,
+      height,
+      ...(update.unit !== undefined ? { unit: update.unit } : {}),
+      config: config as Prisma.InputJsonValue,
+    },
+  });
   return success(serialize(design), "Desain berhasil diperbarui");
 }
 
