@@ -1,0 +1,4 @@
+# This migration is deliberately checked in to enable db deploy once Prisma engines
+# are available in the environment. Prisma Migrate manages this lock file.
+provider = "mysql"
+

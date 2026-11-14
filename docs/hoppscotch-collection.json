@@ -1,0 +1,257 @@
+{
+  "v": "2",
+  "name": "TicketForge AI API",
+  "folders": [
+    {
+      "v": "2",
+      "name": "01 - Health",
+      "folders": [],
+      "requests": [
+        {
+          "v": "1",
+          "name": "01 - Health check",
+          "method": "GET",
+          "endpoint": "{{baseUrl}}/health",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": []
+        }
+      ]
+    },
+    {
+      "v": "2",
+      "name": "02 - Authentication",
+      "folders": [],
+      "requests": [
+        {
+          "v": "1",
+          "name": "02 - Register user",
+          "method": "POST",
+          "endpoint": "{{baseUrl}}/auth/register",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"Hoppscotch Test\",\n  \"email\": \"hoppscotch-test@example.com\",\n  \"password\": \"TesAkunTicketForge123!\"\n}"
+          },
+          "requestVariables": []
+        },
+        {
+          "v": "1",
+          "name": "03 - Login",
+          "method": "POST",
+          "endpoint": "{{baseUrl}}/auth/login",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"email\": \"hoppscotch-test@example.com\",\n  \"password\": \"TesAkunTicketForge123!\"\n}"
+          },
+          "requestVariables": []
+        },
+        {
+          "v": "1",
+          "name": "04 - Current user (login cookie required)",
+          "method": "GET",
+          "endpoint": "{{baseUrl}}/auth/me",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": []
+        },
+        {
+          "v": "1",
+          "name": "05 - Refresh (refresh cookie required)",
+          "method": "POST",
+          "endpoint": "{{baseUrl}}/auth/refresh",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{}"
+          },
+          "requestVariables": []
+        },
+        {
+          "v": "1",
+          "name": "06 - Update profile (login cookie required)",
+          "method": "PATCH",
+          "endpoint": "{{baseUrl}}/auth/profile",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"Hoppscotch Test Updated\"\n}"
+          },
+          "requestVariables": []
+        },
+        {
+          "v": "1",
+          "name": "07 - Change password (test user only)",
+          "method": "PATCH",
+          "endpoint": "{{baseUrl}}/auth/password",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"currentPassword\": \"TesAkunTicketForge123!\",\n  \"newPassword\": \"PasswordUjiBaru123!\"\n}"
+          },
+          "requestVariables": []
+        },
+        {
+          "v": "1",
+          "name": "08 - Logout",
+          "method": "POST",
+          "endpoint": "{{baseUrl}}/auth/logout",
+          "params": [],
+          "headers": [
+            {
+              "key": "Accept",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{}"
+          },
+          "requestVariables": []
+        }
+      ]
+    }
+  ],
+  "requests": [],
+  "auth": {
+    "authType": "inherit",
+    "authActive": true
+  },
+  "headers": [],
+  "variables": []
+}

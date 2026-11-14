@@ -1,0 +1,261 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  USER
+  ORGANIZATION_ADMIN
+  ORGANIZATION_EDITOR
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum DesignType {
+  EVENT_TICKET
+  PARKING_TICKET
+  ENTRY_TICKET
+  INVITATION
+  MEMBERSHIP_CARD
+  ID_CARD
+  CUSTOM
+}
+
+enum BatchStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id          String                    @id @default(cuid())
+  name        String
+  email       String                    @unique
+  password    String
+  role        UserRole                  @default(USER)
+  isActive    Boolean                   @default(true) @map("is_active")
+  createdAt   DateTime                  @default(now()) @map("created_at")
+  updatedAt   DateTime                  @updatedAt @map("updated_at")
+  memberships OrganizationMembership[]
+  designs     Design[]
+  sessions    Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @map("refresh_token_hash")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logo        String?
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  memberships OrganizationMembership[]
+  members     OrganizationMember[]
+
+  @@map("organizations")
+}
+
+model OrganizationMembership {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  organizationId String   @map("organization_id")
+  role           UserRole @default(ORGANIZATION_ADMIN)
+  createdAt      DateTime @default(now()) @map("created_at")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("organization_memberships")
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  memberNumber   String       @map("member_number")
+  name           String
+  email          String?
+  phone          String?
+  nik            String?      @db.VarChar(512)
+  address        String?      @db.Text
+  photo          String?
+  department     String?
+  position       String?
+  status         MemberStatus @default(ACTIVE)
+  joinedAt       DateTime?    @map("joined_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  qrTokens     MemberQrToken[]
+
+  @@unique([organizationId, memberNumber])
+  @@index([organizationId, name])
+  @@map("organization_members")
+}
+
+model MemberQrToken {
+  id        String   @id @default(cuid())
+  memberId  String   @map("member_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime? @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  member    OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("member_qr_tokens")
+}
+
+model Template {
+  id          String     @id @default(cuid())
+  name        String
+  description String?    @db.Text
+  type        DesignType
+  thumbnail   String?
+  isPublic    Boolean    @default(false) @map("is_public")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  designs     Design[]
+
+  @@map("templates")
+}
+
+model Design {
+  id         String     @id @default(cuid())
+  userId     String     @map("user_id")
+  templateId String?    @map("template_id")
+  name       String
+  type       DesignType
+  width      Int
+  height     Int
+  unit       String     @default("px")
+  config     Json
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  user       User      @relation(fields: [userId], references: [id])
+  template   Template? @relation(fields: [templateId], references: [id])
+  sides      DesignSide[]
+
+  @@index([userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("designs")
+}
+
+model DesignSide {
+  id        String   @id @default(cuid())
+  designId  String   @map("design_id")
+  side      String
+  config    Json
+  createdAt DateTime @default(now()) @map("created_at")
+  design    Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@unique([designId, side])
+  @@map("design_sides")
+}
+
+model DesignAsset {
+  id        String   @id @default(cuid())
+  ownerId   String   @map("owner_id")
+  fileName  String   @map("file_name")
+  fileUrl   String   @map("file_url")
+  mimeType  String   @map("mime_type")
+  fileSize  BigInt   @map("file_size")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ownerId])
+  @@map("design_assets")
+}
+
+model MembershipCardBatch {
+  id             String      @id @default(cuid())
+  organizationId String      @map("organization_id")
+  designId       String      @map("design_id")
+  status         BatchStatus @default(PENDING)
+  totalItems     Int         @default(0) @map("total_items")
+  processedItems Int         @default(0) @map("processed_items")
+  failedItems    Int         @default(0) @map("failed_items")
+  outputUrl      String?     @map("output_url")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  completedAt    DateTime?   @map("completed_at")
+  items          MembershipCardBatchItem[]
+
+  @@index([organizationId, status])
+  @@map("membership_card_batches")
+}
+
+model MembershipCardBatchItem {
+  id        String      @id @default(cuid())
+  batchId   String      @map("batch_id")
+  memberId  String      @map("member_id")
+  status    BatchStatus @default(PENDING)
+  outputUrl String?     @map("output_url")
+  error     String?     @db.Text
+  batch     MembershipCardBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, memberId])
+  @@map("membership_card_batch_items")
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  batchId     String?  @map("batch_id")
+  ticketCode  String   @unique @map("ticket_code")
+  holderName  String?  @map("holder_name")
+  qrTokenHash String?  @unique @map("qr_token_hash")
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([batchId])
+  @@map("tickets")
+}
+
+model AiDesignHistory {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  designId     String?  @map("design_id")
+  prompt       String   @db.Text
+  model        String
+  inputConfig  Json?    @map("input_config")
+  outputConfig Json?    @map("output_config")
+  status       String   @default("COMPLETED")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("ai_design_histories")
+}
+
+model ExportHistory {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  designId  String?  @map("design_id")
+  format    String
+  fileUrl   String?  @map("file_url")
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("export_histories")
+}
